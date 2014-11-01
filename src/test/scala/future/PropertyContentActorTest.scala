@@ -1,30 +1,26 @@
 package future
 
 import akka.actor.{ActorRef, ActorSystem}
-import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
-import scala.concurrent.Future
-import akka.util.Timeout
 import scala.concurrent.duration._
 
-class HotelLookupActorTest extends TestKit(ActorSystem("TestSystem"))
+class PropertyContentActorTest extends TestKit(ActorSystem("TestSystem"))
 with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with ScalaFutures {
-
-  implicit val timeout = Timeout(5 seconds)
 
   override def afterAll() {
 
     system.shutdown()
   }
 
-  "A HotelLookupActor" should "forward a successful result to its sender" in {
+  "A Property Content Actor" should "find all available hotels" in {
 
     val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService))
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(lookupActor))
 
-    val futureRes: Future[String] = (lookupActor ? 2).mapTo[String]
+    contentActor ! List(2, 4, 6)
 
-    futureRes.futureValue should equal("2")
+    expectMsg(10 seconds, List("2", "4", "6"))
   }
 }

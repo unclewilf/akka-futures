@@ -5,7 +5,7 @@ import ExecutionContext.Implicits.global
 
 class EvenToStringHotelService extends HotelService {
 
-  def find(id: Int): Future[String] = {
+  override def find(id: Int): Future[String] = {
 
     Future {
       if (id % 2 == 0) String.valueOf(id)
