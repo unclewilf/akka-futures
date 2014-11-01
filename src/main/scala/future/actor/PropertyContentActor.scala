@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import akka.pattern.ask
 import akka.util.Timeout
-import future.message.{LookupHotels, PersistContent}
+import future.message.{LookupFailed, LookupHotels, PersistContent}
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
@@ -37,13 +37,24 @@ class PropertyContentActor(lookupActor: ActorRef) extends Actor {
     sequence onSuccess {
       case hotels: Seq[String] => sendSuccessMessage(hotels, caller)
     }
+
+    sequence onFailure {
+      case e: Throwable => sendFailureMessage(e, caller)
+    }
   }
 
-  def sendSuccessMessage(hotels: Seq[String], caller: ActorRef) {
+  def sendSuccessMessage(hotels: Seq[String], caller: ActorRef): Unit = {
 
     log.info("completed processing messages[{}]", hotels)
 
     caller ! PersistContent(hotels)
+  }
+
+  def sendFailureMessage(e: Throwable, ref: ActorRef): Unit = {
+
+    log.info("failed to process messsages with error[{}]", e.getMessage)
+
+    ref ! LookupFailed(e)
   }
 
   def lookupIds(ids: Seq[Int]): Seq[Future[String]] = {

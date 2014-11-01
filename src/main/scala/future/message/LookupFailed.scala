@@ -1,3 +1,3 @@
 package future.message
 
-case class LookupFailed(e: Exception)
+case class LookupFailed(e: Throwable)
