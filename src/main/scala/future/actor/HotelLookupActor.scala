@@ -15,7 +15,6 @@ class HotelLookupActor(service: HotelService) extends Actor {
 
   override def receive: Receive = {
     case id: Int => respondToSender(id)
-    case _ => throw new IllegalArgumentException("Expecting a string")
   }
 
   def respondToSender(i: Int): Unit = {
