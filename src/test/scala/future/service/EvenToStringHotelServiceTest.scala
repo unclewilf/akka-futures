@@ -1,6 +1,7 @@
 package future.service
 
 import org.scalatest.concurrent.{AsyncAssertions, ScalaFutures}
+import org.scalatest.time.{Span, Seconds}
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -10,22 +11,17 @@ import scala.util._
 class EvenToStringHotelServiceTest
   extends FlatSpec with Matchers with ScalaFutures with AsyncAssertions {
 
-  val service = new EvenToStringHotelService
+  private val pause: Long = 100L
+
+  val service = new EvenToStringHotelService(pause)
 
   it should "return a valid id for even number" in {
 
     val futureRes: Future[String] = service.find(2)
 
-    whenReady(futureRes) {
+    whenReady(futureRes, timeout(Span(2, Seconds))) {
       res => res should equal("2")
     }
-  }
-
-  it should "return a valid id for even number again" in {
-
-    val futureRes: Future[String] = service.find(4)
-
-    futureRes.futureValue should equal("4")
   }
 
   it should "throw for odd number" in {

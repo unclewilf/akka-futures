@@ -1,6 +1,7 @@
 package future.actor
 
 import akka.actor.{Actor, Props}
+import akka.event.Logging
 import akka.pattern.pipe
 import future.service.HotelService
 

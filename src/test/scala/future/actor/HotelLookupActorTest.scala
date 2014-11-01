@@ -6,6 +6,7 @@ import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
 import future.service.EvenToStringHotelService
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.time.{Span, Seconds}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.Future
@@ -23,10 +24,14 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
   "A HotelLookupActor" should "forward a successful result to its sender" in {
 
-    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService))
+    val pause: Long = 50L
+
+    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService(pause)))
 
     val futureRes: Future[String] = (lookupActor ? 2).mapTo[String]
 
-    futureRes.futureValue should equal("2")
+    whenReady(futureRes, timeout(Span(2, Seconds))) {
+      r => r should equal("2")
+    }
   }
 }
