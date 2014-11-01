@@ -1,36 +1,45 @@
 package future.actor
 
-import akka.actor.{Props, ActorRef, ActorSystem}
-import akka.contrib.throttle.Throttler.SetTarget
-import akka.contrib.throttle.{Throttler, TimerBasedThrottler}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.contrib.throttle.Throttler.{SetTarget, _}
+import akka.contrib.throttle.TimerBasedThrottler
 import akka.testkit.{ImplicitSender, TestKit}
 import future.message.{LookupHotels, PersistContent}
 import future.service.EvenToStringHotelService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
-import akka.contrib.throttle.Throttler._
 
 import scala.concurrent.duration._
 
 class PropertyContentActorThrottlingTest extends TestKit(ActorSystem("TestSystem"))
- with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with ScalaFutures {
+with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with ScalaFutures {
 
-   val servicePause = 100L
+  val servicePause = 100L
 
-   override def afterAll() {
+  override def afterAll() {
 
-     system.shutdown()
-   }
+    system.shutdown()
+  }
 
-   "A Property Content Actor" should "find all available hotels " in {
+  "A Property Content Actor" should "find all available hotels within acceptable throttle limit" in {
 
-     val throttler: ActorRef = createThrottler(3, 1.second)
-     val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(throttler))
+    val throttler: ActorRef = createThrottler(3, 1.second)
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(throttler))
 
-     contentActor ! LookupHotels(List(2, 4, 6))
+    contentActor ! LookupHotels(List(2, 4, 6))
 
-     expectMsg(10 seconds, PersistContent(List("2", "4", "6")))
-   }
+    expectMsg(2 seconds, PersistContent(List("2", "4", "6")))
+  }
+
+  "A Property Content Actor" should "throw exception when throttle times out" in {
+
+    val throttler: ActorRef = createThrottler(2, 1.second)
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(throttler))
+
+    contentActor ! LookupHotels(List(2, 4, 6, 8, 10))
+
+    expectNoMsg(2 seconds)
+  }
 
   def createThrottler(rate: Int, period: FiniteDuration): ActorRef = {
 
