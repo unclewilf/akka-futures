@@ -3,7 +3,7 @@ package future.actor
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
 import future.message.{LookupFailed, LookupHotels, PersistContent}
-import future.service.EvenToStringHotelService
+import future.service.EvenIdOnlyHotelService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
@@ -21,20 +21,25 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
     val pause: Long = 30L
 
-    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService(pause)), "lookup")
-    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(lookupActor), "content")
+    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenIdOnlyHotelService(pause)))
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(lookupActor))
 
     contentActor ! LookupHotels(List(2, 4, 6))
 
-    expectMsg(2 seconds, PersistContent(List("2", "4", "6")))
+    val msg: PersistContent = expectMsgType[PersistContent](2 seconds)
+    val ids = msg.content map {
+      c => c.hotel.id
+    }
+
+    ids should equal(List("2", "4", "6"))
   }
 
   "A Property Content Actor" should "fail gracefully when future timeout exceeded" in {
 
     val pause: Long = 200L
 
-    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService(pause)), "lookup")
-    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(lookupActor, 100 millis), "content")
+    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenIdOnlyHotelService(pause)))
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(lookupActor, 100 millis))
 
     contentActor ! LookupHotels(List(2))
 

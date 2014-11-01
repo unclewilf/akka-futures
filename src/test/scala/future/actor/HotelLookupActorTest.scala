@@ -4,7 +4,8 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
-import future.service.EvenToStringHotelService
+import future.domain.Hotel
+import future.service.EvenIdOnlyHotelService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
@@ -26,12 +27,12 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
     val pause: Long = 50L
 
-    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService(pause)))
+    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenIdOnlyHotelService(pause)))
 
-    val futureRes: Future[String] = (lookupActor ? 2).mapTo[String]
+    val futureRes: Future[Hotel] = (lookupActor ? 2).mapTo[Hotel]
 
     whenReady(futureRes, timeout(Span(2, Seconds))) {
-      r => r should equal("2")
+      r => r.id should equal("2")
     }
   }
 }

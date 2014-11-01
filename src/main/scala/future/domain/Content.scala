@@ -1,3 +1,3 @@
 package future.domain
 
-case class Content(id: String)
+case class Content(hotel: Hotel)

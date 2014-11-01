@@ -1,8 +1,8 @@
 package future.actor
 
 import akka.actor.{Actor, Props}
-import akka.event.Logging
 import akka.pattern.pipe
+import future.domain.Hotel
 import future.service.HotelService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,7 +19,7 @@ class HotelLookupActor(service: HotelService) extends Actor {
   }
 
   def respondToSender(i: Int): Unit = {
-    val hotel: Future[String] = service.find(i)
+    val hotel: Future[Hotel] = service.find(i)
 
     pipe(hotel) to sender
   }

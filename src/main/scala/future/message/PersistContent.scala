@@ -1,3 +1,5 @@
 package future.message
 
-case class PersistContent(hotels: Seq[String])
+import future.domain.Content
+
+case class PersistContent(content: Seq[Content])

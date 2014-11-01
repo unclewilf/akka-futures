@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import akka.pattern.ask
 import akka.util.Timeout
+import future.domain.{Content, Hotel}
 import future.message.{LookupFailed, LookupHotels, PersistContent}
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -30,13 +31,13 @@ class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
 
     log.info("looking up ids[{}]", ids)
 
-    val futures: Seq[Future[String]] = lookupIds(ids)
+    val futures: Seq[Future[Content]] = lookupIds(ids)
 
-    val sequence: Future[Seq[String]] = Future.sequence(futures)
+    val sequence: Future[Seq[Content]] = Future.sequence(futures)
     val caller = sender()
 
     sequence onSuccess {
-      case hotels: Seq[String] => sendSuccessMessage(hotels, caller)
+      case hotels: Seq[Content] => sendSuccessMessage(hotels, caller)
     }
 
     sequence onFailure {
@@ -44,7 +45,7 @@ class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
     }
   }
 
-  def sendSuccessMessage(hotels: Seq[String], caller: ActorRef): Unit = {
+  def sendSuccessMessage(hotels: Seq[Content], caller: ActorRef): Unit = {
 
     log.info("completed processing messages[{}]", hotels)
 
@@ -58,10 +59,19 @@ class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
     ref ! LookupFailed(e)
   }
 
-  def lookupIds(ids: Seq[Int]): Seq[Future[String]] = {
+  def lookupIds(ids: Seq[Int]): Seq[Future[Content]] = {
 
     ids map {
-      id => (lookupActor ? id).mapTo[String]
+      id => {
+        for {
+          hotel ← askForHotelBy(id)
+        } yield Content(hotel)
+      }
     }
   }
+
+  def askForHotelBy(id: Int): Future[Hotel] = {
+    (lookupActor ? id).mapTo[Hotel]
+  }
+
 }

@@ -5,7 +5,7 @@ import akka.contrib.throttle.Throttler.{SetTarget, _}
 import akka.contrib.throttle.TimerBasedThrottler
 import akka.testkit.{ImplicitSender, TestKit}
 import future.message.{LookupFailed, LookupHotels, PersistContent}
-import future.service.EvenToStringHotelService
+import future.service.EvenIdOnlyHotelService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
@@ -28,7 +28,12 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
     contentActor ! LookupHotels(List(2, 4, 6))
 
-    expectMsg(2 seconds, PersistContent(List("2", "4", "6")))
+    val msg: PersistContent = expectMsgType[PersistContent](2 seconds)
+    val ids = msg.content map {
+      c => c.hotel.id
+    }
+
+    ids should equal(List("2", "4", "6"))
   }
 
   "A Property Content Actor" should "throw exception when throttle times out" in {
@@ -53,7 +58,7 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
   def createThrottler(rate: Int, period: FiniteDuration): ActorRef = {
 
-    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenToStringHotelService(servicePause)))
+    val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenIdOnlyHotelService(servicePause)))
 
     val throttler = system.actorOf(Props(classOf[TimerBasedThrottler],
       rate msgsPer period))
