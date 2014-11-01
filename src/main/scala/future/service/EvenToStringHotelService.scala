@@ -1,7 +1,7 @@
-package future
+package future.service
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import ExecutionContext.Implicits.global
 
 class EvenToStringHotelService extends HotelService {
 

@@ -1,12 +1,14 @@
-package future
+package future.actor
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.pattern.ask
 import akka.testkit.{ImplicitSender, TestKit}
+import akka.util.Timeout
+import future.service.EvenToStringHotelService
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+
 import scala.concurrent.Future
-import akka.util.Timeout
 import scala.concurrent.duration._
 
 class HotelLookupActorTest extends TestKit(ActorSystem("TestSystem"))

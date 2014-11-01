@@ -1,4 +1,4 @@
-package future
+package future.service
 
 import scala.concurrent.Future
 

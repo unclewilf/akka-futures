@@ -1,10 +1,11 @@
-package future
+package future.actor
 
-import akka.actor.{Props, Actor}
+import akka.actor.{Actor, Props}
 import akka.pattern.pipe
-import scala.concurrent.{ExecutionContext, Future}
+import future.service.HotelService
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import ExecutionContext.Implicits.global
 
 object HotelLookupActor {
   def props(service: HotelService): Props = Props(new HotelLookupActor(service))

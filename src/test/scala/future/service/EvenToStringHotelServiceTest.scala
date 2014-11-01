@@ -1,4 +1,4 @@
-package future
+package future.service
 
 import org.scalatest.concurrent.{AsyncAssertions, ScalaFutures}
 import org.scalatest.{FlatSpec, Matchers}
