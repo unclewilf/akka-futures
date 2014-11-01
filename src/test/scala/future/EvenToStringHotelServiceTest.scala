@@ -7,7 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.util._
 
-class EvenToStringHotelServiceTest extends FlatSpec with Matchers with ScalaFutures with AsyncAssertions {
+class EvenToStringHotelServiceTest
+  extends FlatSpec with Matchers with ScalaFutures with AsyncAssertions {
 
   val service = new EvenToStringHotelService
 
