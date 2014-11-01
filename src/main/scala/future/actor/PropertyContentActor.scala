@@ -11,12 +11,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object PropertyContentActor {
-  def props(lookupActor: ActorRef): Props = Props(new PropertyContentActor(lookupActor))
+  def props(lookupActor: ActorRef, timeout: Timeout = 2.seconds): Props =
+    Props(new PropertyContentActor(lookupActor, timeout))
 }
 
-class PropertyContentActor(lookupActor: ActorRef) extends Actor {
+class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
 
-  implicit val timeout = Timeout(2 seconds)
+  implicit val timeout = t
 
   val log = Logging(context.system, this)
 
