@@ -7,9 +7,9 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
 import scala.util._
 
-class HotelServiceTest extends FlatSpec with Matchers with ScalaFutures with AsyncAssertions {
+class EvenToStringHotelServiceTest extends FlatSpec with Matchers with ScalaFutures with AsyncAssertions {
 
-  val service = new HotelService
+  val service = new EvenToStringHotelService
 
   it should "return a valid id for even number" in {
 
