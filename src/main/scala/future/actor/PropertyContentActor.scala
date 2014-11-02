@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.event.Logging
 import akka.pattern.ask
 import akka.util.Timeout
-import future.domain.{Content, Hotel}
+import future.domain.{Rating, Content, Hotel}
 import future.message.{LookupFailed, LookupHotels, PersistContent}
 
 import scala.concurrent.ExecutionContext.Implicits._
@@ -12,11 +12,11 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object PropertyContentActor {
-  def props(lookupActor: ActorRef, timeout: Timeout = 2.seconds): Props =
-    Props(new PropertyContentActor(lookupActor, timeout))
+  def props(lookupActor: ActorRef, ratingActor: ActorRef, timeout: Timeout = 2.seconds): Props =
+    Props(new PropertyContentActor(lookupActor, ratingActor, timeout))
 }
 
-class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
+class PropertyContentActor(lookupActor: ActorRef, ratingActor: ActorRef, t: Timeout) extends Actor {
 
   implicit val timeout = t
 
@@ -65,7 +65,8 @@ class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
       id => {
         for {
           hotel ← askForHotelBy(id)
-        } yield Content(hotel)
+          rating ← askForRatingBy(id)
+        } yield Content(hotel, rating)
       }
     }
   }
@@ -74,4 +75,7 @@ class PropertyContentActor(lookupActor: ActorRef, t: Timeout) extends Actor {
     (lookupActor ? id).mapTo[Hotel]
   }
 
+  def askForRatingBy(id: Int): Future[Rating] = {
+    (ratingActor ? id).mapTo[Rating]
+  }
 }

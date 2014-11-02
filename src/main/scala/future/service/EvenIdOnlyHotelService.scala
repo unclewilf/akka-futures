@@ -10,9 +10,11 @@ class EvenIdOnlyHotelService(pause: Long) extends HotelService {
   override def find(id: Int): Future[Hotel] = {
 
     Future {
+
       Thread.sleep(pause)
 
       if (isNumberEven(id)) {
+        println("found id for " + id)
         Hotel(String.valueOf(id))
       } else {
         throw new IllegalArgumentException("Even number required")

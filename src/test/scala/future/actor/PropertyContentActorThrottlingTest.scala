@@ -5,7 +5,7 @@ import akka.contrib.throttle.Throttler.{SetTarget, _}
 import akka.contrib.throttle.TimerBasedThrottler
 import akka.testkit.{ImplicitSender, TestKit}
 import future.message.{LookupFailed, LookupHotels, PersistContent}
-import future.service.EvenIdOnlyHotelService
+import future.service.{RandomRatingService, EvenIdOnlyHotelService}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
@@ -23,8 +23,9 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
   "A Property Content Actor" should "find all available hotels within acceptable throttle limit" in {
 
-    val throttler: ActorRef = createThrottler(3, 1.second)
-    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(throttler))
+    val hotelThrottle: ActorRef = createHotelThrottler(3, 1.second)
+    val ratingThrottle: ActorRef = createRatingThrottler(3, 1.second)
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(hotelThrottle, ratingThrottle))
 
     contentActor ! LookupHotels(List(2, 4, 6))
 
@@ -38,8 +39,9 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
   "A Property Content Actor" should "throw exception when throttle times out" in {
 
-    val throttler: ActorRef = createThrottler(2, 1.second)
-    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(throttler))
+    val hotelThrottle: ActorRef = createHotelThrottler(2, 1.second)
+    val ratingThrottle: ActorRef = createRatingThrottler(2, 1.second)
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(hotelThrottle, ratingThrottle))
 
     contentActor ! LookupHotels(List(2, 4, 6, 8, 10))
 
@@ -48,21 +50,33 @@ with FlatSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender with 
 
   "A Property Content Actor" should "send failure message when service fails to find a hotel" in {
 
-    val throttler: ActorRef = createThrottler(2, 1.second)
-    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(throttler))
+    val hotelThrottle: ActorRef = createHotelThrottler(2, 1.second)
+    val ratingThrottle: ActorRef = createRatingThrottler(2, 1.second)
+    val contentActor: ActorRef = system.actorOf(PropertyContentActor.props(hotelThrottle, ratingThrottle))
 
     contentActor ! LookupHotels(List(1))
 
     expectMsgType[LookupFailed](2 seconds)
   }
 
-  def createThrottler(rate: Int, period: FiniteDuration): ActorRef = {
+  def createHotelThrottler(rate: Int, period: FiniteDuration): ActorRef = {
 
     val lookupActor: ActorRef = system.actorOf(HotelLookupActor.props(new EvenIdOnlyHotelService(servicePause)))
 
     val throttler = system.actorOf(Props(classOf[TimerBasedThrottler],
       rate msgsPer period))
     throttler ! SetTarget(Some(lookupActor))
+
+    throttler
+  }
+
+  def createRatingThrottler(rate: Int, period: FiniteDuration): ActorRef = {
+
+    val ratingActor: ActorRef = system.actorOf(RatingLookupActor.props(new RandomRatingService(servicePause)))
+
+    val throttler = system.actorOf(Props(classOf[TimerBasedThrottler],
+      rate msgsPer period))
+    throttler ! SetTarget(Some(ratingActor))
 
     throttler
   }
