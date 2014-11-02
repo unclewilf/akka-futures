@@ -1,3 +1,3 @@
 package future.message
 
-case class LookupHotels(ids: Seq[Int])
+case class LookupHotels(ids: List[Int])

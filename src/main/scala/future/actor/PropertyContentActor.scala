@@ -27,25 +27,30 @@ class PropertyContentActor(lookupActor: ActorRef, ratingActor: ActorRef, t: Time
     case LookupHotels(ids) => findAllContent(ids)
   }
 
-  def findAllContent(ids: Seq[Int]): Unit = {
+  def findAllContent(ids: List[Int]): Unit = {
 
     log.info("looking up ids[{}]", ids)
 
-    val futures: Seq[Future[Content]] = lookupIds(ids)
+    val results: Future[(List[Hotel], List[Rating])] = lookupIds(ids)
 
-    val sequence: Future[Seq[Content]] = Future.sequence(futures)
     val caller = sender()
 
-    sequence onSuccess {
-      case hotels: Seq[Content] => sendSuccessMessage(hotels, caller)
+    results onSuccess {
+      case result => sendSuccessMessage(combineResults(result), caller)
     }
 
-    sequence onFailure {
+    results onFailure {
       case e: Throwable => sendFailureMessage(e, caller)
     }
   }
 
-  def sendSuccessMessage(hotels: Seq[Content], caller: ActorRef): Unit = {
+  def combineResults(results: (List[Hotel], List[Rating])): List[Content] = {
+    results._1.zip(results._2) map {
+      result => Content(result._1, result._2)
+    }
+  }
+
+  def sendSuccessMessage(hotels: List[Content], caller: ActorRef): Unit = {
 
     log.info("completed processing messages[{}]", hotels)
 
@@ -59,16 +64,23 @@ class PropertyContentActor(lookupActor: ActorRef, ratingActor: ActorRef, t: Time
     ref ! LookupFailed(e)
   }
 
-  def lookupIds(ids: Seq[Int]): Seq[Future[Content]] = {
+  def lookupIds(ids: List[Int]): Future[(List[Hotel], List[Rating])] = {
 
-    ids map {
-      id => {
-        for {
-          hotel ← askForHotelBy(id)
-          rating ← askForRatingBy(id)
-        } yield Content(hotel, rating)
-      }
+    val hotels: List[Future[Hotel]] = ids map {
+      id => askForHotelBy(id)
     }
+
+    val ratings: List[Future[Rating]] = ids map {
+      id => askForRatingBy(id)
+    }
+
+    val hotelSeq = Future.sequence(hotels)
+    val ratingSeq = Future.sequence(ratings)
+    
+    for {
+      h <- hotelSeq
+      r <- ratingSeq
+    } yield (h, r)
   }
 
   def askForHotelBy(id: Int): Future[Hotel] = {
